@@ -12,4 +12,4 @@ rr: rr.o
 
 .PHONY: clean
 clean:
-	rm -f rr.o rr
+	rm -rf rr.o rr __pycache__
