@@ -172,7 +172,7 @@ int main(int argc, char *argv[]) {
     {
         struct process *current_process = &data[i];
         current_process->remaining_time = current_process->burst_time;
-        printf("Process %d arrives at %d and has to run for %d units of time.\n", current_process->pid, current_process->arrival_time, current_process->burst_time);
+//         fprintf(stderr, "Process %d arrives at %d and has to run for %d units of time.\n", current_process->pid, current_process->arrival_time, current_process->burst_time);
     }
 
     // Simulate Round Robin
@@ -189,46 +189,45 @@ int main(int argc, char *argv[]) {
             struct process *new_process = &data[i];
             if (new_process->arrival_time == time) {
                 TAILQ_INSERT_TAIL(&list, new_process, pointers);
-                printf("Adding process %d to the queue...\n", new_process->pid);
+//                 fprintf(stderr, "Adding process %d to the queue...\n", new_process->pid);
             }
         }
         
+        // if current process is finished remove it from the queue
+        if (current_process != NULL) {
+            if (current_process->remaining_time == 0) {
+                current_process->end_time = time;
+                current_process->waiting_time = current_process->end_time - current_process->arrival_time - current_process->burst_time;
+//                 fprintf(stderr, "Terminating process %d - quantum lasted %d, waiting time was %d, and response time was %d\n", current_process->pid, current_quantum, current_process->waiting_time, current_process->response_time);
+                TAILQ_REMOVE(&list, current_process, pointers);
+                current_process = NULL;
+                finished_processes += 1;
+                if (finished_processes == size) {
+                    finished = true;
+                }
+            }
+
+            // if the quantum is over move the current_process to the back of the queue
+            if (current_quantum == quantum_length && current_process != NULL) {
+//                 fprintf(stderr, "Pausing process %d - quantum lasted %d\n", current_process->pid, current_quantum);
+                TAILQ_REMOVE(&list, current_process, pointers);
+                TAILQ_INSERT_TAIL(&list, current_process, pointers);
+                current_process = NULL;
+            }
+        }
+
         // start a new process if the queue isn't empty and there is no current process 
         if (!TAILQ_EMPTY(&list) && current_process == NULL) {
             current_process = TAILQ_FIRST(&list);
             current_process->start_exec_time = time;
-            printf("Starting process %d", current_process->pid);
+//             fprintf(stderr, "Starting process %d", current_process->pid);
             if (current_process->remaining_time == current_process->burst_time) {
                 current_process->response_time = current_process->start_exec_time - current_process->arrival_time;
-                printf(" - response time was %d", current_process->response_time);
+//                 fprintf(stderr,  " - response time was %d", current_process->response_time);
             }
-            printf("\n");
+//             fprintf(stderr,"\n");
             current_quantum = 0;
             context_switches++;
-        }
-
-
-        // if current process is finished remove it from the queue
-        if (current_process->remaining_time == 0 && current_process != NULL) {
-            current_process->end_time = time;
-            current_process->waiting_time = current_process->end_time - current_process->arrival_time - current_process->burst_time;
-            printf("Terminating process %d - quantum lasted %d, waiting time was %d, and response time was %d\n", current_process->pid, current_quantum, current_process->waiting_time, current_process->response_time);
-            TAILQ_REMOVE(&list, current_process, pointers);
-            current_process = NULL;
-            finished_processes += 1;
-            if (finished_processes == size) {
-                finished = true;
-            }
-            continue;
-        }
-
-        // if the quantum is over move the current_process to the back of the queue
-        if (current_quantum == quantum_length && current_process != NULL) {
-            printf("Pausing process %d - quantum lasted %d\n", current_process->pid, current_quantum);
-            TAILQ_REMOVE(&list, current_process, pointers);
-            TAILQ_INSERT_TAIL(&list, current_process, pointers);
-            current_process = NULL;
-            continue;
         }
 
         if (current_process != NULL) {
@@ -248,7 +247,7 @@ int main(int argc, char *argv[]) {
     }
     /* End of "Your code here" */
 
-    printf("Total time: %d\n", time-1);
+//     fprintf(stderr, "Total time: %d\n", time);
     printf("Average waiting time: %.2f\n", (float)total_waiting_time / (float)size);
     printf("Average response time: %.2f\n", (float)total_response_time / (float)size);
 
